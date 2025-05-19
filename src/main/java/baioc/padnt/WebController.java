@@ -1,24 +1,27 @@
 package baioc.padnt;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.server.ResponseStatusException;
+
 import jakarta.servlet.http.HttpServletRequest;
 
 // NOTE: class-level mapping matches any non-empty path without dots (includes slashes),
 // so static resources MUST have a file extension. I couldn't get a more complex regex to
 // work here, so actual path validation and separation is implemented in `parseRequestPath`.
 @Controller
+
+
 @RequestMapping(path="/{_:[^\\.]+$}")
 public class WebController {
 

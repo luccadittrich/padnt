@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Canvas de Desenho</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <h1>Desenhe aqui!</h1>
+    <canvas id="meuCanvas" width="500" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById('meuCanvas');
+        const ctx = canvas.getContext('2d');
+        let desenhando = false;
+
+        canvas.addEventListener('mousedown', () => { desenhando = true; });
+        canvas.addEventListener('mouseup', () => { desenhando = false; ctx.beginPath(); });
+        canvas.addEventListener('mousemove', desenhar);
+
+        function desenhar(e) {
+            if (!desenhando) return;
+
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = 'black';
+
+            ctx.lineTo(e.offsetX, e.offsetY);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(e.offsetX, e.offsetY);
+        }
+    </script>
+</body>
+</html>
