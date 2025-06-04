@@ -2,17 +2,104 @@
 <html>
 <head>
     <title>Canvas de Desenho</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         canvas {
             border: 1px solid black;
         }
+
+        .img-preview {
+            position: relative;
+            display: inline-block;
+            margin: 5px;
+        }
+
+        .btn-excluir {
+            position: absolute;
+            top: 0;
+            right: 0;
+            padding: 0.2rem 0.5rem;
+        }
+
+        body.light-mode {
+            background-color: white;
+            color: black;
+        }
+
+        body.dark-mode {
+            background-color: #121212;
+            color: white;
+        }
+
+        /* Barra de range com contraste em ambos temas */
+        input[type=range] {
+            accent-color: #0d6efd;
+        }
+
+        body.dark-mode input[type=range] {
+            accent-color: #f8f9fa;
+        }
+
+        #toggleTheme {
+            cursor: pointer;
+            font-size: 1.4rem;
+        }
+
+        #espessura {
+            accent-color: blue;
+
+        }
+        #espessura::-webkit-slider-thumb {
+            background: blue; /* cor do botão */
+        }
+
+        #espessura::-webkit-slider-runnable-track {
+        background: lightgray; /* cor da barra */
+        }
+
     </style>
 </head>
-<body>
-    <h1>Desenhe aqui!</h1>
-    <canvas id="meuCanvas" width="500" height="400"></canvas>
+<body class="container py-4 light-mode">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Desenhe aqui!</h2>
+        <span id="toggleTheme" title="Alternar tema">🌙</span>
+    </div>
 
+    <div class="d-flex flex-wrap gap-4">
+        <div>
+            <canvas id="meuCanvas" width="700" height="500" class="mb-3 border" style="background-color: white;"></canvas>
+        </div>
+
+        <div>
+            <h3>Galeria de desenhos:</h3>
+            <div id="galeria" class="d-flex flex-column gap-2"></div>
+        </div>
+    </div>
+
+    <div class="mb-2 d-flex align-items-center flex-wrap gap-2">
+        <input type="color" id="corSelecionada" class="form-control form-control-color" value="#000000" title="Escolha a cor">
+
+        <input type="text" id="textoCanvas" class="form-control w-25" placeholder="Digite o texto">
+        <button class="btn btn-primary" onclick="ativarTexto()">Inserir texto</button>
+    </div>
+
+    <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-outline-primary" onclick="alternarEspessura()">Tamanho do pincel</button>
+        <div id="controleEspessura" style="display: none;">
+            <input type="range" id="espessura" min="1" max="20" value="2" class="form-range">
+        </div>
+    </div>
+
+    <div class="d-flex align-items-center gap-2 mt-2">
+
+        <button class="btn btn-success" onclick="salvarDesenho()">Salvar</button>
+        <button class="btn btn-danger" onclick="limparCanvas()">Limpar</button>
+        <button class="btn btn-secondary" onclick="window.location.href='/'">Voltar</button>
+
+
+    </div>
     <script>
+
         const canvas = document.getElementById('meuCanvas');
         const ctx = canvas.getContext('2d');
         let desenhando = false;
@@ -21,18 +108,86 @@
         canvas.addEventListener('mouseup', () => { desenhando = false; ctx.beginPath(); });
         canvas.addEventListener('mousemove', desenhar);
 
+        const corSelecionada = document.getElementById('corSelecionada');
+
         function desenhar(e) {
             if (!desenhando) return;
 
-            ctx.lineWidth = 2;
+            ctx.lineWidth = document.getElementById('espessura').value;
             ctx.lineCap = 'round';
-            ctx.strokeStyle = 'black';
+            ctx.strokeStyle = corSelecionada.value;
 
             ctx.lineTo(e.offsetX, e.offsetY);
             ctx.stroke();
             ctx.beginPath();
             ctx.moveTo(e.offsetX, e.offsetY);
         }
+
+        function limparCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function salvarDesenho() {
+            const imagem = canvas.toDataURL('image/png');
+            const div = document.createElement('div');
+            div.className = 'img-preview';
+
+            const img = document.createElement('img');
+            img.src = imagem;
+            img.width = 100;
+            img.className = 'img-thumbnail';
+
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-sm btn-danger rounded-circle';
+            btn.style.width = '32px';
+            btn.style.height = '32px';
+            btn.style.padding = '0';
+            btn.style.marginBottom = '50px';
+            btn.innerText = 'x';
+            btn.onclick = () => div.remove();
+
+            div.appendChild(img);
+            div.appendChild(btn);
+            document.getElementById('galeria').appendChild(div);
+
+            fetch('/desenhos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imagemBase64: imagem })
+            });
+        }
+
+        function alternarEspessura() {
+            const controle = document.getElementById('controleEspessura');
+            controle.style.display = controle.style.display === 'none' ? 'block' : 'none';
+        }
+
+        let modoTexto = false;
+        function ativarTexto() {
+            modoTexto = true;
+        }
+
+        canvas.addEventListener('click', function (e) {
+            if (modoTexto) {
+                const texto = document.getElementById('textoCanvas').value;
+                ctx.font = "20px Arial";
+                ctx.fillStyle = corSelecionada.value;
+                ctx.fillText(texto, e.offsetX, e.offsetY);
+                modoTexto = false;
+            }
+        });
+
+        // Alternar tema claro/escuro
+        const toggleThemeBtn = document.getElementById('toggleTheme');
+        toggleThemeBtn.onclick = () => {
+            const body = document.body;
+            const isLight = body.classList.contains('light-mode');
+
+            body.classList.toggle('light-mode', !isLight);
+            body.classList.toggle('dark-mode', isLight);
+
+            toggleThemeBtn.textContent = isLight ? '☀️' : '🌙';
+        };
     </script>
 </body>
 </html>

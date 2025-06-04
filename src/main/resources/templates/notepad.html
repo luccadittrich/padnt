@@ -3,57 +3,87 @@
 
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title th:text="${directory} + ${filename}"></title>
 
-	<title
-		th:text="${directory} + ${filename}">
-	</title>
+	<link href="https://fonts.googleapis.com/css2?family=Fira+Code&family=Courier+Prime&display=swap" rel="stylesheet">
 
 	<style>
-		* {
-			margin: 0px;
-			padding: 0px;
+		:root {
+			--bg-main:rgb(255, 255, 255);
+			--bg-folder:rgb(0, 0, 0);
+			--text-main:rgb(0, 0, 0);
+			--text-dim: #a6adc8;
 		}
+
+		* {
+			margin: 0;
+			padding: 0;
+		}
+
 		html {
 			overflow: hidden;
 		}
+
 		body {
-			font-family: monospace;
+			font-family: 'Fira Code', monospace;
 			height: 100vh;
 			width: 100vw;
+			background-color: var(--bg-main);
+			color: var(--text-main);
 		}
+
 		.flex {
 			display: flex;
 		}
+
 		.column {
 			height: 100%;
 		}
+
 		#folder {
-			padding-left: 8px;
-			padding-right: 8px;
+			padding: 8px;
 			width: auto;
-			color: dimgray;
-			background-color: lightgray;
+			color: var(--text-dim);
+			background-color: var(--bg-folder);
 		}
+
 		#folder h2 {
 			margin-bottom: 2vh;
 		}
+
 		#folder ol {
 			list-style: none;
 		}
+
 		#notepad {
 			flex-grow: 1;
-			color: black;
-			background-color: white;
+			color: var(--text-main);
+			background-color: var(--bg-main);
+			display: flex;
+			flex-direction: column;
 		}
+
+		#toolbar {
+			background-color:rgb(116, 116, 188);
+			padding: 8px;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+
 		#notepad textarea {
+			flex-grow: 1;
 			padding: 8px;
 			width: calc(100% - 16px);
-			height: calc(100% - 16px);
+			height: 100%;
 			overflow: auto;
 			outline: none;
 			resize: none;
-			border: 0px;
-			font-family: monospace;
+			border: 0;
+			font-family: 'Fira Code', monospace;
+			font-size: 16px;
+			color: var(--text-main);
+			background-color: var(--bg-main);
 		}
 	</style>
 </head>
@@ -67,9 +97,22 @@
 	</section>
 
 	<section id="notepad" class="column">
-		<textarea wrap="off" autofocus oninput="changed=true"
-			th:text="${content}">
-		</textarea>
+		<div id="toolbar">
+			<label for="fontSelect">Fonte:</label>
+			<select id="fontSelect">
+				<option value="'Fira Code', monospace">Fira Code</option>
+				<option value="'Courier Prime', monospace">Courier Prime</option>
+				<option value="monospace">Monospace</option>
+			</select>
+
+			<label for="fontSize">Tamanho:</label>
+			<input type="number" id="fontSize" value="16" min="10" max="40" style="width: 60px" />
+
+			<label for="fontColor">Cor:</label>
+			<input type="color" id="fontColor" value="#cdd6f4" />
+		</div>
+
+		<textarea wrap="off" autofocus oninput="changed=true" th:text="${content}"></textarea>
 	</section>
 
 	<script>
@@ -83,12 +126,12 @@
 					},
 					body: content.value,
 				})
-				.then(response => {
-					console.debug(`PUT #${response.status}`)
-				})
-				.catch(error => {
-					console.error('PUT error:', error);
-				});
+					.then(response => {
+						console.debug(`PUT #${response.status}`)
+					})
+					.catch(error => {
+						console.error('PUT error:', error);
+					});
 			} else {
 				fetch(path, {
 					method: 'GET',
@@ -96,19 +139,71 @@
 						'Accept': 'text/plain',
 					}
 				})
-				.then(response => response.text())
-				.then(text => {
-					content.value = text;
-				})
-				.catch(error => {
-					console.error('GET error:', error);
-				});
+					.then(response => response.text())
+					.then(text => {
+						content.value = text;
+					})
+					.catch(error => {
+						console.error('GET error:', error);
+					});
 			}
 			changed = false;
 		}
+
 		const pathname = window.location.pathname;
-		const textarea = document.getElementById('notepad').getElementsByTagName('textarea')[0];
+		const textarea = document.querySelector('#notepad textarea');
 		setInterval(updateNotepad, 3000, pathname, textarea);
+
+		// Botões de controle
+		document.getElementById('fontSelect').addEventListener('change', e => {
+			textarea.style.fontFamily = e.target.value;
+		});
+		document.getElementById('fontSize').addEventListener('input', e => {
+			textarea.style.fontSize = `${e.target.value}px`;
+		});
+		document.getElementById('fontColor').addEventListener('input', e => {
+			textarea.style.color = e.target.value;
+		});
+
+        // Carregar preferências do usuário ao iniciar
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedFont = localStorage.getItem('fontFamily');
+            const savedSize = localStorage.getItem('fontSize');
+            const savedColor = localStorage.getItem('fontColor');
+
+            if (savedFont) {
+                textarea.style.fontFamily = savedFont;
+                document.getElementById('fontSelect').value = savedFont;
+            }
+            if (savedSize) {
+                textarea.style.fontSize = `${savedSize}px`;
+                document.getElementById('fontSize').value = savedSize;
+            }
+            if (savedColor) {
+                textarea.style.color = savedColor;
+                document.getElementById('fontColor').value = savedColor;
+            }
+        });
+
+        document.getElementById('fontSelect').addEventListener('change', e => {
+            const font = e.target.value;
+            textarea.style.fontFamily = font;
+            localStorage.setItem('fontFamily', font);
+        });
+
+        document.getElementById('fontSize').addEventListener('input', e => {
+            const size = e.target.value;
+            textarea.style.fontSize = `${size}px`;
+            localStorage.setItem('fontSize', size);
+        });
+
+        document.getElementById('fontColor').addEventListener('input', e => {
+            const color = e.target.value;
+            textarea.style.color = color;
+            localStorage.setItem('fontColor', color);
+        });
+
+
 	</script>
 </body>
 
